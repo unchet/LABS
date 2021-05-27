@@ -1,0 +1,2 @@
+lab26:
+	gcc -Wall lab26.c stack.c -o lab26
