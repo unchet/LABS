@@ -1,0 +1,177 @@
+\section{Приведение уравнения поверхности второго рода к каноническому виду}
+
+\begin{sagesilent}
+    plot_range = 10.0
+    u(x, y, z) = 11 * x ^ 2 - 2 * x * y - 2 * x * z + 2 * y * z + 9 * z ^ 2 - 4 * x + y + z
+\end{sagesilent}
+
+Исходное уравнение поверхности второго рода:
+
+$\sage{u(x, y, z)} = 0$
+
+\begin{sagesilent}
+    # Из уравнения поверхности получим коэффициенты
+    a11 = 11
+    a22 = 0
+    a33 = 9
+
+    a12 = -2 / 2
+    a13 = -2 / 2
+    a23 = 2 / 2
+
+    a0 = 0
+    a1 = -4 / 2
+    a2 = 1 / 2
+    a3 = 1 / 2
+
+    matrA = matrix([
+    [a11, a12, a13],
+    [a12, a22, a23],
+    [a13, a23, a33]
+    ])
+
+    vecA = vector([a1, a2, a3])
+\end{sagesilent}
+
+Матричный вид уравнения:
+
+$\sage{LatexExpr("A = " + latex(matrA))}$
+
+И вектор линейных коэффициентов:
+
+$\sage{LatexExpr("a = " + latex(vecA))}$
+
+\begin{sagesilent}
+    # Характеристический многочлен
+    var("l")
+    matrAm = matrA - l * identity_matrix(3)
+    detA = det(matrAm).simplify_full()
+\end{sagesilent}
+
+Составим характеристический многочлен:
+
+$\sage{LatexExpr(r'\det(A - l * E) = ' + latex(detA))}$
+
+\begin{sagesilent}
+    solutions = solve(detA == 0, l)
+    eigenvalues = []
+    for i in range(len(solutions)):
+        eigenvalues.append(solutions[i].rhs().real().n(digits = 8))
+\end{sagesilent}
+
+Корни характеристического уравнения:
+
+$\sage{LatexExpr("l_0 = " + str(eigenvalues[0]) + r', l_1 = ' + str(eigenvalues[1]) + r', l_2 = ' + str(eigenvalues[2]))}$
+
+\begin{sagesilent}
+    eigenvectors = []
+    var("x1 x2 x3")
+    for i in range(len(eigenvalues)):
+        matrB = matrA - eigenvalues[i] * identity_matrix(3)
+        system = []
+        for j in range(3):
+            system.append(matrB[j][0] * x1 + matrB[j][1] * x2 + matrB[j][2] * x3 == 0)
+        
+        system[1] = system[1] - system[0] * matrB[1][0] / matrB[0][0]
+        system[2] = system[2] - system[0] * matrB[2][0] / matrB[0][0]
+        system[2] = system[2] - system[1]  * (system[2].lhs() / system[1].lhs())
+       
+        if(system[2].lhs() == 0 and system[2].rhs() == 0):
+            system[2] = (x3 == 1)
+        else:
+            print("Ранг матрицы равен трём. Что-то пошло не так")
+
+        eigenvec = vector([k.rhs().n(digits = 10) for k in solve(system, x1, x2, x3)[0]])
+        ans = matrB * eigenvec
+        eigenvectors.append(eigenvec.n(digits = 8))
+\end{sagesilent}
+
+Получим собственные векторы:
+
+$\sage{LatexExpr(r'\lambda_0 = ' + str(eigenvalues[0].n(digits = 8)) + ', s_0 = ' + str(eigenvectors[0].n(digits = 8)))}$
+
+$\sage{LatexExpr(r'\lambda_1 = ' + str(eigenvalues[1].n(digits = 8)) + ', s_1 = ' + str(eigenvectors[1].n(digits = 8)))}$
+
+$\sage{LatexExpr(r'\lambda_2 = ' + str(eigenvalues[2].n(digits = 8)) + ', s_2 = ' + str(eigenvectors[2].n(digits = 8)))}$
+
+\begin{sagesilent}
+    matrS = matrix(eigenvectors)
+\end{sagesilent}
+
+Матрица перехода:
+
+$\sage{LatexExpr("S = " + latex(matrS.n(digits = 8)))}$
+
+\begin{sagesilent}
+    for i in range(len(eigenvectors)):
+        eigenvectors[i] = eigenvectors[i] / sqrt(eigenvectors[i].dot_product(eigenvectors[i]))
+    matrSn = matrix(eigenvectors) 
+\end{sagesilent}
+
+нормированная матрица перехода:
+
+$\sage{LatexExpr("S^* = " + latex(matrSn.n(digits = 8)))}$
+
+\begin{sagesilent}
+    matrDiag = matrix([
+    [eigenvalues[0], 0, 0],
+    [0, eigenvalues[1], 0],
+    [0, 0, eigenvalues[2]]
+])
+    matrCheck = matrSn.T * matrDiag * matrSn
+\end{sagesilent}
+
+Составим диагональную матрицу для матрицы А
+
+$\sage{LatexExpr("Diag = " + latex(matrDiag.n(digits = 8)))}$
+
+$\sage{LatexExpr("Sn^T * Diag * Sn = " + latex(matrCheck.n(digits = 8)))}$
+
+Видим, что эта матрица соответствует изначальной, значит все вычисления были верными
+
+\begin{sagesilent}
+    vecA1 = matrSn.T * vecA
+\end{sagesilent}
+
+Новый вектор линейных коэффициентов:
+
+$\sage{vecA1}$
+
+\begin{sagesilent}
+    v(x, y, z) = 0
+    variables = [x, y, z]
+    for i in range(len(variables)):
+        v += matrDiag[i][i] * variables[i] ^ 2 + variables[i] * vecA1[i]
+\end{sagesilent}
+
+После приведения к каноническому виду получим:
+
+$\sage{v(x, y, z) == 0}$
+
+\begin{sagesilent}
+    coef = []
+    for i in range(len(vecA1)):
+        coef.append((vecA1[i] / (2 * matrDiag[i][i])) ** 2)
+        if (matrDiag[i][i] * vecA1[i] < 0):
+            coef[i] = -coef[i]
+
+    v(x, y, z) = 0
+    for i in range(len(variables)):
+        v += matrDiag[i][i] * (variables[i] + coef[i]) ^ 2 - matrDiag[i][i] * abs(coef[i])
+\end{sagesilent}
+
+После замены переменных получим:
+
+$\sage{v(x, y, z) == 0}$
+
+Сравним графики исходного уравнения поверхности второго рода и канонического уравнения после замены переменных.
+
+График функции $\sage{u(x, y, z)} = 0$
+\begin{center}
+  \sageplot[trim=50 50 50 50, clip, width=10cm][png]{implicit_plot3d(u, (-plot_range, plot_range), (-plot_range, plot_range), (-plot_range, plot_range), color="orange")}
+\end{center}
+
+График функции $\sage{v(x, y, z)} = 0$
+\begin{center}
+  \sageplot[trim=50 50 50 50, clip, width=10cm][png]{implicit_plot3d(v, (-plot_range, plot_range), (-plot_range, plot_range), (-plot_range, plot_range), color="orange")}
+\end{center}
